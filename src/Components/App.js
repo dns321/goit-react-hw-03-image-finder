@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import Searchbar from './searchbar/Searchbar';
 import ImageGallery from './imageGallery/ImageGallery';
 import Button from './button/Button';
-import newsApi from './api/apiServices';
+import newsApi from '../services/apiServices';
 import Loader from './loader/Loader';
 import Error from './error/Error';
 import Modal from './modal/Modal';
@@ -10,32 +10,34 @@ import Modal from './modal/Modal';
 class App extends Component {
   state = {
     images: [],
-    currentPage: 1,
-    searchQuery: '',
+    totalHits: '',
+    page: 1,
+    q: '',
     isLoading: false,
     originalimg: '',
     error: false,
     showModal: false,
+    showBtn: true,
   };
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevState.searchQuery !== this.state.searchQuery) {
+    if (prevState.q !== this.state.q) {
       this.fetchImages();
     }
   }
 
   onChangeQuery = query => {
     this.setState({
-      searchQuery: query,
-      currentPage: 1,
+      q: query,
+      page: 1,
       images: [],
       error: null,
     });
   };
 
   fetchImages = () => {
-    const { currentPage, searchQuery } = this.state;
-    const options = { currentPage, searchQuery };
+    const { page, q } = this.state;
+    const options = { page, q };
 
     this.setState({ isLoading: true });
 
@@ -44,8 +46,10 @@ class App extends Component {
       .then(hits => {
         this.setState(prevState => ({
           images: [...prevState.images, ...hits],
-          currentPage: prevState.currentPage + 1,
+          page: prevState.page + 1,
         }));
+
+        this.lengthArr(hits.length);
 
         this.windowScroll();
       })
@@ -70,6 +74,12 @@ class App extends Component {
     });
   };
 
+  lengthArr = value => {
+    if (value < 12) {
+      this.setState({ showBtn: false });
+    }
+  };
+
   toggleModal = async event => {
     await this.setState(({ showModal }) => ({
       showModal: !showModal,
@@ -82,8 +92,16 @@ class App extends Component {
   };
 
   render() {
-    const { images, isLoading, error, showModal, originalimg } = this.state;
-    const shouldRenderLoadMoreButton = images.length > 0 && !isLoading;
+    const {
+      images,
+      isLoading,
+      error,
+      showModal,
+      originalimg,
+      showBtn,
+    } = this.state;
+    const shouldRenderLoadMoreButton =
+      images.length > 0 && !isLoading && showBtn;
 
     return (
       <>
